@@ -1,4 +1,10 @@
-from test_harness.test_harness_utils import format_block_label
+from test_harness.test_harness_utils import (
+    flatten_content,
+    get_block_page_1_based,
+    format_block_label,
+    sort_font_collection,
+    print_tag_distribution,
+)
 
 
 def show_content_NormalizeDocument(
@@ -33,7 +39,7 @@ def show_content_NormalizeDocument(
     def show_blocks(blocks, doc_num):
         """Display content blocks with sequential numbering within each document."""
         logger.print(
-            f"\nNormalizeNoDocument [{doc_num}] Content Blocks ({len(blocks)} blocks):"
+            f"\nNormalizedDocument [{doc_num}] Content Blocks ({len(blocks)} blocks):"
         )
         logger.print("-" * 80)
 
@@ -47,9 +53,9 @@ def show_content_NormalizeDocument(
 
                     ### edit add new
                     block_type = type(block).__name__
-                    page_num = getattr(block, "page", "?")
+                    page_num = get_block_page_1_based(block)
                     block_label = format_block_label(
-                        "NORMALIZE",
+                        "NORM",
                         idx,
                         page_num=page_num,
                         doc_index=doc_num,
@@ -159,9 +165,9 @@ def show_content_NormalizeDocument(
                 # )
                 ### edit add new
                 block_type = type(block).__name__
-                page_num = getattr(block, "page", "?")
+                page_num = get_block_page_1_based(block)
                 block_label = format_block_label(
-                    "NORMALIZE",
+                    "NORM",
                     idx,
                     page_num=page_num,
                     doc_index=doc_num,
@@ -302,39 +308,6 @@ def show_content_NormalizeDocument(
                 if doc_type_value:
                     logger.print(f"Type: {doc_type_value}")
 
-            # Display font tags (per-document analyzed font collection)
-            if hasattr(doc, "font_collection"):
-                font_collection = doc.font_collection
-                logger.print(f"\nFont Tags ({len(font_collection)} entries):")
-
-                # Calculate total characters for percentage calculation
-                total_chars = sum(
-                    value[1] if isinstance(value, tuple) and len(value) == 2 else 0
-                    for value in font_collection.values()
-                )
-
-                for idx, (font_key, value) in enumerate(font_collection.items(), 1):
-                    if isinstance(value, tuple) and len(value) == 2:
-                        tag, char_count = value
-                        percentage = (
-                            (char_count / total_chars * 100) if total_chars > 0 else 0
-                        )
-                        logger.print(
-                            f"  {idx}. {font_key}: {char_count} ({percentage:.1f}%) {tag}"
-                        )
-                    else:
-                        # Fallback for old format
-                        logger.print(f"  {idx}. {font_key}: {value}")
-
-                # Process font tags for this logical document (processing retained, display removed)
-                if font_collection:
-                    # Extract tags only for process_font_tags
-                    font_tags_only = {
-                        k: v[0] if isinstance(v, tuple) else v
-                        for k, v in font_collection.items()
-                    }
-                    font_tags = process_font_tags(font_tags_only)
-
             # Display content blocks
             if hasattr(doc, "content"):
                 show_blocks(doc.content, doc_idx)
@@ -355,6 +328,54 @@ def show_content_NormalizeDocument(
                 logger.print(
                     f"Document [{doc_idx}] Summary - Blocks: Text: {text_blocks}, Table: {table_blocks}, Figure: {figure_blocks}, Total: {total_blocks}"
                 )
+
+                # Display font tags (per-document analyzed font collection)
+            if hasattr(doc, "font_collection"):
+                font_collection = doc.font_collection
+                # logger.print(f"\nFont Tags ({len(font_collection)} entries):")
+                logger.print(
+                    f"\nFont Tags sorted by size and font name ({len(font_collection)} entries):"
+                )
+
+                # Calculate total characters for percentage calculation
+                total_chars = sum(
+                    value[1] if isinstance(value, tuple) and len(value) == 2 else 0
+                    for value in font_collection.values()
+                )
+                # for idx, (font_key, value) in enumerate(font_collection.items(), 1):
+                ### edit
+                for idx, (font_key, value) in enumerate(
+                    sort_font_collection(font_collection), 1
+                ):
+                    if isinstance(value, tuple) and len(value) == 2:
+                        tag, char_count = value
+                        percentage = (
+                            (char_count / total_chars * 100) if total_chars > 0 else 0
+                        )
+                        logger.print(
+                            f"  {idx}. {font_key}: {char_count} ({percentage:.1f}%) {tag}"
+                        )
+                    else:
+                        # Fallback for old format
+                        logger.print(f"  {idx}. {font_key}: {value}")
+
+                ### add
+                print_tag_distribution(
+                    logger,
+                    doc.content,
+                    font_collection=font_collection,
+                    title="Tag Distribution for NormalizedDocument",
+                )
+
+                # Process font tags for this logical document (processing retained, display removed)
+                if font_collection:
+                    # Extract tags only for process_font_tags
+                    font_tags_only = {
+                        k: v[0] if isinstance(v, tuple) else v
+                        for k, v in font_collection.items()
+                    }
+                    font_tags = process_font_tags(font_tags_only)
+
     else:
         logger.print(
             "[show_content_NormalizeDocument] No NormalizeDocument objects to display or unsupported object type."

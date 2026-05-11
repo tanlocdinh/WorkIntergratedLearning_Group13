@@ -1,5 +1,9 @@
-from test_harness.test_harness_utils import get_block_page_1_based
-from test_harness.test_harness_utils import format_block_label
+from test_harness.test_harness_utils import (
+    flatten_content,
+    get_block_page_1_based,
+    format_block_label,
+    sort_font_collection,
+)
 
 
 def show_content_RawDataFile(
@@ -45,9 +49,9 @@ def show_content_RawDataFile(
                     continue
 
                 page_num_1_based = get_block_page_1_based(block)
-                # Filter blocks by selected page range (if provided by user).
-                # This ensures that only blocks belonging to the specified pages are displayed.
-                # If no page filter is applied (selected_pages is None), all pages are shown.
+                # filter blocks by selected page range
+                # ensures that only blocks belonging to the specified pages are displayed
+                # if no page filter (None), all pages are shown
                 if (
                     selected_pages is not None
                     and page_num_1_based not in selected_pages
@@ -234,8 +238,53 @@ def show_content_RawDataFile(
             f"Blocks: Text: {text_blocks}, Table: {table_blocks}, Figure: {figure_blocks}, Total: {total_blocks}"
         )
 
+        ### add
+        text_block_nums = [
+            idx
+            for idx, b in enumerate(obj.content, start=1)
+            if type(b).__name__ == "TextBlock"
+        ]
+
+        table_block_nums = [
+            idx
+            for idx, b in enumerate(obj.content, start=1)
+            if type(b).__name__ == "TableBlock"
+        ]
+
+        figure_block_nums = [
+            idx
+            for idx, b in enumerate(obj.content, start=1)
+            if type(b).__name__ == "FigureBlock"
+        ]
+
+        logger.print("Block Type Index:")
+        logger.print(f"  TextBlock: {text_block_nums}")
+        logger.print(f"  TableBlock: {table_block_nums}")
+        logger.print(f"  FigureBlock: {figure_block_nums}")
+
+        # logger.print(
+        #     f"\nFont Collection for PDF file ({len(obj.font_collection)} entries):"
+        # )
+
+        # total_chars = sum(
+        #     value[1] if isinstance(value, tuple) and len(value) == 2 else 0
+        #     for value in obj.font_collection.values()
+        # )
+
+        # for idx, (font_key, value) in enumerate(obj.font_collection.items(), 1):
+        #     if isinstance(value, tuple) and len(value) == 2:
+        #         tag, char_count = value
+        #         percentage = (char_count / total_chars * 100) if total_chars > 0 else 0
+        #         logger.print(
+        #             f"  {idx}. {font_key}: {char_count} ({percentage:.1f}%) {tag}"
+        #         )
+        #     else:
+        #         logger.print(f"  {idx}. {font_key} {value}")
+
+        ### edit
+
         logger.print(
-            f"\nFont Collection for PDF file ({len(obj.font_collection)} entries):"
+            f"\nFont Collection sorted by size and font name for PDF file ({len(obj.font_collection)} entries):"
         )
 
         total_chars = sum(
@@ -243,7 +292,9 @@ def show_content_RawDataFile(
             for value in obj.font_collection.values()
         )
 
-        for idx, (font_key, value) in enumerate(obj.font_collection.items(), 1):
+        for idx, (font_key, value) in enumerate(
+            sort_font_collection(obj.font_collection), 1
+        ):
             if isinstance(value, tuple) and len(value) == 2:
                 tag, char_count = value
                 percentage = (char_count / total_chars * 100) if total_chars > 0 else 0
@@ -277,7 +328,11 @@ def show_content_RawDataFile(
                     for value in doc.font_collection.values()
                 )
 
-                for idx, (font_key, value) in enumerate(doc.font_collection.items(), 1):
+                # for idx, (font_key, value) in enumerate(doc.font_collection.items(), 1):
+                ### edit
+                for idx, (font_key, value) in enumerate(
+                    sort_font_collection(doc.font_collection), 1
+                ):
                     if isinstance(value, tuple) and len(value) == 2:
                         tag, char_count = value
                         percentage = (
