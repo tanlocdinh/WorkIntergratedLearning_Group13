@@ -165,6 +165,7 @@ def show_content_LogicalDocument(
                 # logger.print(
                 #     f"\n[{idx}] {block_type} - Page {getattr(block, 'page', '?')}"
                 # )
+
                 ### edit add new
                 block_type = type(block).__name__
                 page_num = get_block_page_1_based(block)
